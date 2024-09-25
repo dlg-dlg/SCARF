@@ -326,6 +326,17 @@ class Evaluater(torch.nn.Module):
             for step in tqdm(range(2000)):
                 # if self.global_step % self.cfg.train.val_steps == 0:
                 #     self.validation_step(data='testop')
+                #val
+                if (step+1)%200==0 or step==0:
+                    opdict = self.validation_step(batch=batch)
+                    pred = opdict['nerf_fine_image']
+                    gt = batch['image'] 
+                    val_metrics = self.evaluator(pred, gt)
+                    val_info = f'step {step}'
+                    for k, v in val_metrics.items():
+                        val_info = val_info + f'{k}: {v:.6f}, '
+                    logger.info(f"{step}_{val_info}")
+                    
                 ## train
                 losses, _ = self.testoptim(batch, self.global_step)
                 all_loss = losses['all_loss']
@@ -336,14 +347,6 @@ class Evaluater(torch.nn.Module):
 
                 self.global_step += 1
                 self.scheduler.step()
-                if (step+1)%200==0 or step==0:
-                    opdict = self.validation_step(batch=batch)
-                    pred = opdict['nerf_fine_image']
-                    gt = batch['image'] 
-                    val_metrics = self.evaluator(pred, gt)
-                    val_info = f'step {step}'
-                    for k, v in val_metrics.items():
-                        val_info = val_info + f'{k}: {v:.6f}, '
-                    logger.info(f"{step}_{val_info}")
+                
         torch.save(self.posemodel.model_dict(), os.path.join(self.cfg.output_dir, 'model.tar'))
         print('training done')
