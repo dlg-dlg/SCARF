@@ -15,7 +15,7 @@ cfg.device = 'cuda:0'
 
 # load models
 cfg.ckpt_path = None
-cfg.nerf_ckpt_path = 'exps/mpiis/DSC_7157/model.tar'
+cfg.nerf_ckpt_path = ''
 cfg.mesh_ckpt_path = ''
 cfg.pose_ckpt_path = ''
 
