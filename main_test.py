@@ -3,7 +3,6 @@ import argparse
 import shutil
 import yaml
 from datetime import datetime
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from lib.traincp import Evaluater
     
 def test(subject_name, exp_cfg, args=None):
