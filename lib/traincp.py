@@ -199,7 +199,7 @@ class Evaluater(torch.nn.Module):
         else:
             logger.info('model path not found, start training from scratch')
 
-    def testoptim(self, batch, batch_nb, test=False):
+    def testoptim(self, batch, test=False):
         self.model.train()
         util.move_dict_to_device(batch, self.device)
         #-- update pose
@@ -305,13 +305,13 @@ class Evaluater(torch.nn.Module):
                             drop_last=False)
 
     @torch.no_grad()
-    def validation_step(self,data='testop', batch=None, returnVis=False):
+    def validation_step(self,data='testop', batch=None,step=None, returnVis=False):
         self.model.eval()
         batch = self.posemodel(batch)    
         batch['global_step'] = self.global_step
         opdict = self.model(batch, train=False)      
         frame_id = batch['frame_id'][0]
-        savepath = os.path.join(self.cfg.output_dir, 'optimize', f'{frame_id}_{self.global_step:04}.jpg')
+        savepath = os.path.join(self.cfg.output_dir, 'optimize', f'{frame_id}_{step:04}.jpg')
         fine_img = opdict['nerf_fine_image'][0]
         fine_img = fine_img.permute(1,2,0).cpu().numpy()
         fine_img = (fine_img*255).astype(np.uint8)
@@ -322,13 +322,12 @@ class Evaluater(torch.nn.Module):
 
     def fit(self):
         for batch in tqdm(self.test_dataloader):
-            self.global_step=0
             for step in tqdm(range(2000)):
                 # if self.global_step % self.cfg.train.val_steps == 0:
                 #     self.validation_step(data='testop')
                 #val
                 if (step+1)%200==0 or step==0:
-                    opdict = self.validation_step(batch=batch)
+                    opdict = self.validation_step(batch=batch,step=step)
                     pred = opdict['nerf_fine_image']
                     gt = batch['image'] 
                     val_metrics = self.evaluator(pred, gt)
@@ -338,7 +337,7 @@ class Evaluater(torch.nn.Module):
                     logger.info(f"{step}_{val_info}")
                     
                 ## train
-                losses, _ = self.testoptim(batch, self.global_step)
+                losses, _ = self.testoptim(batch=batch)
                 all_loss = losses['all_loss']
                 logger.info(f"{step}_{all_loss.item()}")
                 self.optimizer.zero_grad()
